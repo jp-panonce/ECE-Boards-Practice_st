@@ -2,12 +2,15 @@ import streamlit as st
 import pandas as pd
 from random import randrange
 from random import shuffle
+import unicodedata
 
 st.set_page_config(page_title="PRACTICE",page_icon="📃",layout="wide")
 
+def remove_control_characters(s):
+    return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
+
 def showanswerButtonClicked():
     st.session_state['highlight_answer'] = True
-    print("highlight_answer has been yey")
 
 #get questions data
 
@@ -19,10 +22,13 @@ else:
     
 
 #Selection to let user select subjects to include
-selected_subjects = st.multiselect("Select Subject",["MATH","GEAS","ELECS","EST"],default="EST",placeholder = "All Subjects")
+selected_subjects = st.multiselect("Select Subject",["MATH","GEAS","ELECS","EST"],default="GEAS",placeholder = "All Subjects")
 
 # Apply filter according to selected subject
-applicable_questions = questions_df[questions_df['Subject'].isin(selected_subjects)] 
+if selected_subjects:
+    applicable_questions = questions_df[questions_df['Subject'].isin(selected_subjects)] 
+else:
+    applicable_questions = questions_df
 
 #get random row
 print(len(applicable_questions))
@@ -31,18 +37,23 @@ questionidx_to_display = randrange(0,len(applicable_questions))
 
 # GET QUESTION DATA
 if 'question_loaded' not in st.session_state:
-    st.session_state['question_loaded'] = True
-    st.session_state['question_to_display'] = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'question_txt']
-    st.session_state['letter_correct_answer'] = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'ANS']
-    st.session_state['mult_choice'] = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'mul_choice']
-    st.session_state['correct_answer'] = applicable_questions.loc[applicable_questions.index[questionidx_to_display], st.session_state['letter_correct_answer']]
-    st.session_state['explanation_txt'] = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'explanation_txt']
 
-    question_to_display = st.session_state['question_to_display']
-    letter_correct_answer = st.session_state['letter_correct_answer']
-    mult_choice = st.session_state['mult_choice']
-    correct_answer = st.session_state['correct_answer']
-    explanation_txt = st.session_state['explanation_txt']
+    st.session_state['question_loaded'] = True
+
+    question_to_display = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'question_txt']
+    letter_correct_answer = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'ANS']
+    mult_choice = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'mul_choice']
+    correct_answer = remove_control_characters(applicable_questions.loc[applicable_questions.index[questionidx_to_display], letter_correct_answer])
+    explanation_txt = applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'explanation_txt']
+
+    
+    st.session_state['question_to_display'] = question_to_display
+    st.session_state['letter_correct_answer'] = letter_correct_answer
+    st.session_state['mult_choice'] = mult_choice
+    st.session_state['correct_answer'] = correct_answer
+    st.session_state['explanation_txt'] = explanation_txt
+
+    
 
 else:
     question_to_display = st.session_state['question_to_display']
@@ -59,10 +70,10 @@ if mult_choice == "y":
 
     if 'choices' not in st.session_state:
         choices = [
-            applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'A'],
-            applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'B'],
-            applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'C'],
-            applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'D']
+            remove_control_characters(applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'A']),
+            remove_control_characters(applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'B']),
+            remove_control_characters(applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'C']),
+            remove_control_characters(applicable_questions.loc[applicable_questions.index[questionidx_to_display], 'D'])
         ]
         st.session_state['choices'] = choices
     else:
@@ -89,13 +100,10 @@ st.markdown("#### " + question_to_display)
 choice_to_display = []
 for idx_choice, letter_choice in enumerate(["A","B","C","D"]):
 
-    print(letter_choice)
-    print(shuffled_choices[idx_choice] == correct_answer)
-    print('highlight_answer' in st.session_state)
     if (('highlight_answer' in st.session_state) & (shuffled_choices[idx_choice] == correct_answer)):
-        st.markdown("#### :green[" + (letter_choice + ". " + shuffled_choices[idx_choice]).strip() + "]")
+        st.markdown("#### :green[" + str(letter_choice) + ". " + str(shuffled_choices[idx_choice]).strip().replace("_x000D_","") + "]")
     else:
-        st.markdown("#### " + letter_choice + ". " + shuffled_choices[idx_choice] + "")
+        st.markdown("#### " + str(letter_choice) + ". " + str(shuffled_choices[idx_choice]).strip().replace("_x000D_","") + "")
 
 
 butt_col1, butt_col2, sp = st.columns([0.1,0.1,1])
@@ -108,13 +116,10 @@ with butt_col2:
 
 if 'highlight_answer' in st.session_state:
     # highlight answer if MCQ or show if not MCQ
-    print("Explanation")
-    print(explanation_txt)
-    print(type(explanation_txt))
     if bool(explanation_txt):
         st.markdown("## :blue[EXPLANATION]")
 
-        st.markdown("### " + str(explanation_txt))
+        st.text(str(explanation_txt))
 
 
     
