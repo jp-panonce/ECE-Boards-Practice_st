@@ -4,7 +4,7 @@ from random import randrange
 from random import shuffle
 import unicodedata
 
-st.set_page_config(page_title="PRACTICE",page_icon="📃",layout="wide")
+st.set_page_config(page_title="Practice MCQ",page_icon="📃",layout="wide")
 
 def remove_control_characters(s):
     return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
