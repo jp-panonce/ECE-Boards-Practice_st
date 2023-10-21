@@ -2,6 +2,7 @@ import streamlit as st
 from pathlib import Path
 import pandas as pd
 from PIL import Image
+import base64
 
 def read_markdown_file(markdown_file_path):
     return open(markdown_file_path, 'r')
@@ -24,6 +25,11 @@ def getMnemonicGuides():
     
     return df
 
+def getCircuitsData():
+        # get Formulas
+    df = pd.read_excel('data/references.xlsx', sheet_name='circuits',dtype=str)
+    
+    return df
 
 # get all required data
 df_formulas = getFormulaData()
@@ -149,5 +155,62 @@ with tab_mnemonics:
         st.write(str(guide_to_display['description']))
 
     pass
+
+with tab_ckts:
+
+    # get circuits data and sort by version (to make sure '_main' version goes first)
+    ckt_data = getCircuitsData()
+    ckt_data = ckt_data.sort_values('version')
+
+    # dropdown to search circuit
+    cktNames_list = sorted(ckt_data['name'].unique())
+    selected_ckt = st.selectbox("Search Circuit",cktNames_list)
+
+    # filter data to include selected in dropdown
+    ckt_to_display =  ckt_data[(ckt_data['name'] == selected_ckt)]
+
+    # main name of circuit
+    st.markdown("### " + str(selected_ckt))
+
+    # display_variation = true if there are other versions aside from 'main
+    diplay_variations = len(ckt_to_display.index) > 1
+
+    # iterate through each row
+    for ckt_idx, ckt_row in ckt_to_display.iterrows():
+
+        # display h5 name of version (if not main)
+        if ckt_row['version'] != '_main':
+            st.markdown("##### " + str(ckt_row['version']))
+
+        # add columns
+        ckt_spc, ckt_col1, ckt_spc2, ckt_col2 = st.columns([0.1,1,0.4,1.5])
+
+        #display image
+        try:
+            guide_img = Image.open("images/" + str(ckt_row['ckt_img']))
+            ckt_col1.image(guide_img,use_column_width=True)
+
+        except:
+            st.write("(image can't be loaded)")
+
+        # description
+        ckt_col2.markdown("##### Description")
+        ckt_col2.write(str(ckt_row['description']))
+
+        # if main, add a divider and a "Variations" header
+        if diplay_variations & (ckt_row['version'] == '_main'):
+                st.divider()
+                st.markdown("#### Variations")
+
+with st.sidebar:
+    st.sidebar.markdown(
+        """<a href="https://www.buymeacoffee.com/jpanonce">
+        <img src="data:image/png;base64,{}" width="125">
+        </a>""".format(
+            base64.b64encode(open("images/buymecoffee_default-yellow.png", "rb").read()).decode()
+        ),
+        unsafe_allow_html=True,
+    )
+
 
 # st.markdown(md_file.read(), unsafe_allow_html=True)

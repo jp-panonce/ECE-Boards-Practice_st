@@ -3,6 +3,7 @@ import pandas as pd
 from random import randrange
 from random import shuffle
 import unicodedata
+import base64
 from PIL import Image
 
 
@@ -207,3 +208,13 @@ if anoth_question_button:
         if key != 'questions_df':
             del st.session_state[key]
     st.experimental_rerun()
+
+with st.sidebar:
+    st.sidebar.markdown(
+        """<a href="https://www.buymeacoffee.com/jpanonce">
+        <img src="data:image/png;base64,{}" width="125">
+        </a>""".format(
+            base64.b64encode(open("images/buymecoffee_default-yellow.png", "rb").read()).decode()
+        ),
+        unsafe_allow_html=True,
+    )
